@@ -1,0 +1,65 @@
+/* Styles généraux */
+body {
+    font-family: Arial, sans-serif;
+    background-color: #1e1e2f; /* Couleur de fond sombre */
+    color: white; /* Texte en blanc */
+    margin: 0;
+    padding: 0;
+}
+
+/* Formulaires */
+form {
+    margin: 20px 0;
+}
+
+/* Boutons */
+button {
+    background-color: #4CAF50; /* Vert */
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+button:hover {
+    background-color: #45a049; /* Vert plus foncé au survol */
+}
+
+/* Inputs */
+input[type="text"] {
+    padding: 10px;
+    width: 80%;
+    margin: 10px 0;
+    border: 1px solid #00fd87cc;
+    border-radius: 4px;
+    font-size: 16px;
+}
+
+/* Sections */
+#register, #userAdd, #userShare {
+    background-color: #2c2c3d; /* Fond légèrement plus clair */
+    padding: 20px;
+    margin: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Espace des vidéos */
+#participants {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 20px;
+    background-color: #33334d; /* Couleur de fond des vidéos */
+    border-radius: 8px;
+}
+
+/* Vidéo */
+video {
+    width: 300px;
+    height: auto;
+    border: 2px solid #4CAF50; /* Bordure verte */
+    border-radius: 8px;
+}

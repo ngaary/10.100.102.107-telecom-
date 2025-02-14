@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ngary.dp_marley</title>
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <script src="./index.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #1e1e2e;
+            color: #ffffff;
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+        }
+        input, button {
+            padding: 10px;
+            margin: 10px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        input {
+            width: 200px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #participants {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        video {
+            width: 300px;
+            margin: 10px;
+            border-radius: 10px;
+            border: 2px solid #4CAF50;
+        }
+        div {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            display: inline-block;
+            margin: 20px auto;
+        }
+        .image-container {
+            margin-top: 20px;
+        }
+        .image-container img {
+            width: 300px;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div id="register">
+        <h1>Ton Nom :</h1>
+        <form onsubmit="register(); return false;">
+            <input type="text" id="name" placeholder="Entrez votre nom" required>
+            <button type="submit">Rejoindre</button>
+        </form>
+        <div class="image-container">
+            <img src="https://th.bing.com/th/id/OIP.I93czaBdroe1LgixyrNVRgHaEK?rs=1&pid=ImgDetMain" alt="Image">
+        </div>
+    </div>
+
+    <div id="userAdd" style="display: none;">
+        <h1>Se connecter à un autre utilisateur :</h1>
+        <form onsubmit="appelUser(); return false;">
+            <input type="text" id="add" placeholder="Nom de l'utilisateur" required>
+            <button type="submit">Appeler</button>
+        </form>
+    </div>
+
+    <div id="userShare" style="display: none;">
+        <h1>Partager son écran :</h1>
+        <form onsubmit="addScreenShare(); return false;">
+            <input type="text" id="share" placeholder="Nom de l'utilisateur" required>
+            <button type="submit">Partager</button>
+        </form>
+    </div>
+
+    <div id="participants"></div>
+</body>
+</html>
