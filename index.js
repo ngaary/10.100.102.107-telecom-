@@ -1,144 +1,107 @@
 var peer;
-var myStream = null; // Initialisation à null pour éviter l'affichage avant l'enregistrement
+var myStream;
+var videoElements = {}; // Stocker les flux pour éviter les doublons
 
-// Fonction pour ajouter une vidéo sans duplication
-function ajoutVideo(stream, userId) {
-    let existingVideo = document.getElementById(`video-${userId}`);
+// Fonction pour ajouter une vidéo à l'interface
+function ajoutVideo(stream, id) {
+    if (videoElements[id]) return; // Empêche d'ajouter plusieurs fois la même vidéo
 
-    // Vérifier si la vidéo existe déjà pour cet utilisateur
-    if (!existingVideo) {
-        let video = document.createElement('video');
-        video.id = `video-${userId}`;
-        video.srcObject = stream;
-        video.autoplay = true;
-        video.controls = true;
-        document.getElementById('participants').appendChild(video);
-    }
+    var video = document.createElement('video');
+    video.id = id; // Identifiant unique pour chaque vidéo
+    video.autoplay = true;
+    video.controls = true;
+    video.srcObject = stream;
+    document.getElementById('participants').appendChild(video);
+
+    videoElements[id] = video; // Stocke la vidéo pour éviter le doublon
 }
 
-// Fonction pour enregistrer l'utilisateur et initialiser le peer
+// Fonction d'enregistrement de l'utilisateur
 function register() {
-    var name = document.getElementById('name').value.trim();
-
+    var name = document.getElementById('name').value;
     if (!name) {
-        alert("Veuillez entrer un nom !");
+        console.error("Nom requis.");
         return;
     }
 
-    try {
-        peer = new Peer(name);  // Créer un peer avec le nom de l'utilisateur
+    if (peer) {
+        console.log("Une connexion Peer existe déjà.");
+        return;
+    }
 
-        peer.on('open', function(id) {
-            console.log('Peer ouvert avec l\'ID:', id);
-        });
+    peer = new Peer(name);
 
-        navigator.mediaDevices.getUserMedia({ video: true, audio: true })
-            .then(function(stream) {
-                myStream = stream; // Stocke le flux local
-                ajoutVideo(stream, "self"); // Ajoute la vidéo uniquement après l'enregistrement du nom
-                document.getElementById('register').style.display = 'none';
-                document.getElementById('userAdd').style.display = 'block';
-                document.getElementById('userShare').style.display = 'block';
+    navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+        .then(stream => {
+            myStream = stream;
+            ajoutVideo(stream, "localVideo");
 
-                // Réception d'un appel entrant
-                peer.on('call', function(call) {
-                    call.answer(myStream); // Répondre avec le flux local
-                    call.on('stream', function(remoteStream) {
-                        ajoutVideo(remoteStream, call.peer); // Ajouter la vidéo de l'appelant si elle n'existe pas déjà
-                    });
+            document.getElementById('register').style.display = 'none';
+            document.getElementById('userAdd').style.display = 'block';
+            document.getElementById('userShare').style.display = 'block';
+
+            peer.on('call', function(call) {
+                call.answer(myStream);
+                call.on('stream', function(remoteStream) {
+                    ajoutVideo(remoteStream, call.peer);
                 });
-            })
-            .catch(function(err) {
-                console.log('Échec de l\'accès au flux vidéo/audio', err);
-                alert("Impossible d'accéder à votre caméra et microphone.");
+                call.on('error', function(err) {
+                    console.error("Erreur lors de l'appel :", err);
+                });
             });
 
-    } catch (error) {
-        console.error("Erreur lors de la création du peer:", error);
-    }
+        }).catch(err => {
+            console.error("Échec d'accès au flux vidéo/audio :", err);
+        });
 }
 
 // Fonction pour appeler un utilisateur
 function appelUser() {
-    var name = document.getElementById('add').value.trim();
-    
-    if (!name || !myStream) {
-        alert("Veuillez entrer un nom valide et vous enregistrer d'abord !");
+    var name = document.getElementById('add').value;
+    if (!name) {
+        console.error("Nom de l'utilisateur requis.");
         return;
     }
+    document.getElementById('add').value = "";
 
     var call = peer.call(name, myStream);
-    
+
     call.on('stream', function(remoteStream) {
-        ajoutVideo(remoteStream, name); // Ajouter la vidéo de l'utilisateur appelé
+        ajoutVideo(remoteStream, call.peer);
     });
 
-    document.getElementById('add').value = ""; // Réinitialiser l'entrée
+    call.on('error', function(err) {
+        console.error("Erreur d'appel :", err);
+    });
 }
 
+// Fonction pour partager l'écran
 function addScreenShare() {
-    var name = document.getElementById('share').value.trim();
-    document.getElementById('share').value = ""; // Réinitialiser l'entrée
-
-    if (!name || !peer) {
-        alert("Veuillez entrer un nom valide et vous enregistrer d'abord !");
+    var name = document.getElementById('share').value;
+    if (!name) {
+        console.error("Nom de l'utilisateur requis.");
         return;
     }
+    document.getElementById('share').value = "";
 
     navigator.mediaDevices.getDisplayMedia({ video: { cursor: "always" }, audio: true })
-        .then((screenStream) => {
-            console.log('Partage d\'écran démarré');
+        .then(stream => {
+            let call = peer.call(name, stream);
 
-            // Supprimer l'ancienne vidéo de partage d'écran si elle existe
-            let existingScreenVideo = document.getElementById(`video-screen-${name}`);
-            if (existingScreenVideo) existingScreenVideo.remove();
+            ajoutVideo(stream, "screenShare");
 
-            // Ajouter la vidéo du partage pour l'administrateur
-            ajoutVideo(screenStream, `screen-${name}`);
-
-            // Envoyer le flux de partage à l'invité
-            let call = peer.call(name, screenStream);
-
-            // L’invité reçoit le partage et l’affiche
-            call.on('stream', function(remoteStream) {
-                let userScreenVideoId = `video-screen-${name}`;
-                
-                // Supprimer la vidéo normale de l’invité (évite les doublons)
-                let existingUserVideo = document.getElementById(`video-${name}`);
-                if (existingUserVideo) existingUserVideo.remove();
-
-                // Ajouter la vidéo du partage pour l'invité
-                if (!document.getElementById(userScreenVideoId)) {
-                    ajoutVideo(remoteStream, userScreenVideoId);
-                }
+            call.on('error', function(err) {
+                console.error("Erreur de partage d'écran :", err);
             });
 
-            // Quand l’administrateur arrête le partage, il remet sa caméra
-            screenStream.getTracks()[0].onended = function() {
-                console.log("Partage d'écran terminé");
-                document.getElementById(`video-screen-${name}`)?.remove(); // Supprimer le partage
-                ajoutVideo(myStream, "self"); // Remettre la caméra normale
+            stream.getVideoTracks()[0].onended = function() {
+                navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+                    .then(newStream => {
+                        myStream = newStream;
+                        ajoutVideo(newStream, "localVideo");
+                    })
+                    .catch(err => console.error("Impossible de récupérer la caméra :", err));
             };
         })
-        .catch((err) => {
-            console.error('Erreur lors du partage d\'écran:', err);
-            alert('Impossible de partager l\'écran.');
-        });
+        .catch(error => console.error("Erreur lors du partage d'écran :", error));
 }
-
-// Fonction pour afficher les utilisateurs connectés
-function afficherUtilisateursConnectes() {
-    peer.listAllPeers(function(peers) {
-        let userList = document.getElementById('userList');
-        userList.innerHTML = ''; // Vider la liste avant de la remplir
-
-        peers.forEach(function(peerId) {
-            let listItem = document.createElement('li');
-            listItem.textContent = peerId;
-            userList.appendChild(listItem);
-        });
-    });
-}
-
-// Appeler la fonction pour afficher les utilisateurs connectés toutes les 5 secondes
-setInterval(afficherUtilisateursConnectes, 5000);
